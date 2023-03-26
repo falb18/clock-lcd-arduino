@@ -49,20 +49,51 @@ bool h12_flag = SET_12_HR_FRMT;
 bool pm_flag = SET_PM_FRMT;
 bool century = false;
 
-byte hours = 0;
-byte minutes = 0;
-byte seconds = 0;
-
-byte date = 0;
-byte month = 1;
-byte year = 0;
-
 unsigned long prev_time_ms = 0;
 unsigned long current_time_ms = 0;
 
 struct lcd_position {
     uint8_t col;
     uint8_t row;
+};
+
+struct rtc_date_t {
+    char str_date[11]; /* 10 characters for the date + null character */
+
+    uint8_t date;
+    uint8_t month;
+    uint8_t year;
+
+    uint8_t str_lcd_col;
+    uint8_t str_lcd_row;
+
+    lcd_position pos_date_date;
+    lcd_position pos_date_month;
+    lcd_position pos_date_year;
+}rtc_date;
+
+struct rtc_time_t {
+    char str_time[9]; /* 8 characters for the date + null character */
+
+    uint8_t hours;
+    uint8_t mins;
+    uint8_t secs;
+
+    uint8_t str_lcd_col;
+    uint8_t str_lcd_row;
+
+    lcd_position pos_time_hr;
+    lcd_position pos_time_min;
+    lcd_position pos_time_sec;
+}rtc_time;
+
+struct lcd_position *date_time_positions[6] = {
+    &rtc_date.pos_date_date,
+    &rtc_date.pos_date_month,
+    &rtc_date.pos_date_year,
+    &rtc_time.pos_time_hr,
+    &rtc_time.pos_time_min,
+    &rtc_time.pos_time_sec
 };
 
 void setup(void)
@@ -74,10 +105,37 @@ void setup(void)
     btn_edit.setDebounceTime(20);
     btn_set.setDebounceTime(20);
 
-    pinMode(LED_BUILTIN, OUTPUT);
-
     prev_time_ms = millis();
     current_time_ms = prev_time_ms;
+
+    /* Initialize variables for current date and time */
+    rtc_date.str_date[11] = {0};
+    rtc_date.date = 0;
+    rtc_date.month = 0;
+    rtc_date.year = 0;
+    rtc_date.str_lcd_col = 3;
+    rtc_date.str_lcd_row = 0;
+    rtc_date.pos_date_date = {3, 0};
+    rtc_date.pos_date_month = {6, 0};
+    rtc_date.pos_date_year = {11, 0};
+
+    rtc_time.str_time[9] = {0};
+    rtc_time.hours = 0;
+    rtc_time.mins = 0;
+    rtc_time.secs = 0;
+    rtc_time.str_lcd_col = 4;
+    rtc_time.str_lcd_row = 1;
+    rtc_time.pos_time_hr = {4, 1};
+    rtc_time.pos_time_min = {7, 1};
+    rtc_time.pos_time_sec = {10, 1};
+
+    rtc_time.hours = rtc.getHour(h12_flag, pm_flag);
+    rtc_time.mins = rtc.getMinute();
+    rtc_time.secs = rtc.getSecond();
+
+    rtc_date.date = rtc.getDate();
+    rtc_date.month = rtc.getMonth(century);
+    rtc_date.year = rtc.getYear();
 
     display_date_time();
 }
@@ -100,44 +158,28 @@ void loop(void)
 
 void display_date_time(void)
 {
-    static char str_time[8] = {0};
-    static char str_date[10] = {0};
+    rtc_time.hours = rtc.getHour(h12_flag, pm_flag);
+    rtc_time.mins = rtc.getMinute();
+    rtc_time.secs = rtc.getSecond();
 
-    struct lcd_position pos_time = {4, 1};
-    struct lcd_position pos_date = {3, 0};
+    sprintf(rtc_time.str_time, "%02u:%02u:%02u", rtc_time.hours, rtc_time.mins, rtc_time.secs);
+    lcd.setCursor(rtc_time.str_lcd_col, rtc_time.str_lcd_row);
+    lcd.print(rtc_time.str_time);
 
-    hours = rtc.getHour(h12_flag, pm_flag);
-    minutes = rtc.getMinute();
-    seconds = rtc.getSecond();
-    sprintf(str_time, "%02d:%02d:%02d", hours, minutes, seconds);
-
-    lcd.setCursor(pos_time.col, pos_time.row);
-    lcd.print(str_time);
-
-    sprintf(str_date, "%02d/%02d/20%02d", date, month, year);
-
-    lcd.setCursor(pos_date.col, pos_date.row);
-    lcd.print(str_date);
+    sprintf(rtc_date.str_date, "%02u/%02u/20%02u", rtc_date.date, rtc_date.month, rtc_date.year);
+    lcd.setCursor(rtc_date.str_lcd_col,rtc_date.str_lcd_row);
+    lcd.print(rtc_date.str_date);
 }
 
 void edit_date_time(void)
 {
-    struct lcd_position pos_date_date = {3, 0};
-    struct lcd_position pos_time_month = {6, 0};
-    struct lcd_position pos_date_year = {11, 0};
-
-    struct lcd_position pos_time_hr = {4, 1};
-    struct lcd_position pos_time_min = {7, 1};
-    struct lcd_position pos_time_sec = {10, 1};
-
-    byte rtc_current[6] = {date, month, year, hours, minutes, seconds};
-    struct lcd_position date_time_positions[6] = {
-        pos_date_date,
-        pos_time_month,
-        pos_date_year,
-        pos_time_hr,
-        pos_time_min,
-        pos_time_sec
+    byte rtc_current[6] = {
+        rtc_date.date,
+        rtc_date.month,
+        rtc_date.year,
+        rtc_time.hours,
+        rtc_time.mins,
+        rtc_time.secs
     };
 
     char str_param[2] = {0};
@@ -152,14 +194,14 @@ void edit_date_time(void)
     while(param_idx <= NUM_DATE_TIME_PARAMS) {
         btnList.handle();
 
-        tmp_lcd_col = date_time_positions[param_idx].col;
-        tmp_lcd_row = date_time_positions[param_idx].row;
+        tmp_lcd_col = date_time_positions[param_idx]->col;
+        tmp_lcd_row = date_time_positions[param_idx]->row;
         blink_parameter(tmp_lcd_col, tmp_lcd_row, str_param);
 
         /* Edit the next parameter on the LCD after the button edit is clicked */
         if(btn_edit.isClicked() == true) {
-            tmp_lcd_col = date_time_positions[param_idx].col;
-            tmp_lcd_row = date_time_positions[param_idx].row;
+            tmp_lcd_col = date_time_positions[param_idx]->col;
+            tmp_lcd_row = date_time_positions[param_idx]->row;
             lcd.setCursor(tmp_lcd_col, tmp_lcd_row);
             lcd.print(str_param);
 
