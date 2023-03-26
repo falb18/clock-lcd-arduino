@@ -23,6 +23,13 @@
 /* The total number of editable paramaters in date and time strings */
 #define NUM_DATE_TIME_PARAMS 5
 
+#define DATE_IDX 0
+#define MONTH_IDX 1
+#define YEAR_IDX 2
+#define HOUR_IDX 3
+#define MIN_IDX 4
+#define SEC_IDX 5
+
 #define BLINKING_PARAM_MS 300UL
 #define BLINK_CLEAR_PARAM 0x00
 #define BLINK_SET_PARAM 0x01
@@ -200,13 +207,28 @@ void edit_date_time(void)
 
         /* Edit the next parameter on the LCD after the button edit is clicked */
         if(btn_edit.isClicked() == true) {
+            /* First, stop blinking animation on the previous paramater before blinking the next one */
             lcd.setCursor(tmp_lcd_col, tmp_lcd_row);
             lcd.print(str_param);
 
+            /* Select the next characters that will start blinking */
             param_idx += 1;
             sprintf(str_param, "%02u", rtc_current[param_idx]);
 
+            /* It's important to always reset the click state button before requesting the next state */
             btn_edit.resetClicked();
+        }
+
+        /* Update the paramater with the new value and show it on the display */
+        if (btn_set.isClicked() == true) {
+            increment_param(param_idx, &rtc_current[param_idx]);
+            
+            sprintf(str_param, "%02u", rtc_current[param_idx]);
+            lcd.setCursor(tmp_lcd_col, tmp_lcd_row);
+            lcd.print(str_param);
+            
+            /* It's important to always reset the click state button before requesting the next state */
+            btn_set.resetClicked();
         }
     }
 }
@@ -231,5 +253,35 @@ void blink_parameter(uint8_t lcd_col, uint8_t lcd_row, char *str_param)
         } else {
             lcd.print(str_param);
         }
+    }
+}
+
+void increment_param(uint8_t param_idx, uint8_t *param)
+{
+    /* Increment the value of the given parameter but always keep track when the variable has to be
+     * reset after certain limit
+     */
+    switch (param_idx)
+    {
+    case DATE_IDX:
+        *param = (*param == 31) ? 1 : (*param += 1);
+        break;
+    case MONTH_IDX:
+        *param = (*param == 12) ? 1 : (*param += 1);
+        break;
+    case YEAR_IDX:
+        *param = (*param == 99) ? 0 : (*param += 1);
+        break;
+    case HOUR_IDX:
+        *param = (*param == 23) ? 0 : (*param += 1);
+        break;
+    case MIN_IDX:
+        *param = (*param == 59) ? 0 : (*param += 1);
+        break;
+    case SEC_IDX:
+        *param = (*param == 59) ? 0 : (*param += 1);
+        break;
+    default:
+        break;
     }
 }
