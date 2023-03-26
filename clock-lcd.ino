@@ -200,8 +200,6 @@ void edit_date_time(void)
 
         /* Edit the next parameter on the LCD after the button edit is clicked */
         if(btn_edit.isClicked() == true) {
-            tmp_lcd_col = date_time_positions[param_idx]->col;
-            tmp_lcd_row = date_time_positions[param_idx]->row;
             lcd.setCursor(tmp_lcd_col, tmp_lcd_row);
             lcd.print(str_param);
 
