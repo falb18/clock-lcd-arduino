@@ -7,8 +7,8 @@
 #include <AbleButtons.h>
 
 /* Macros for DS3231 functions */
-#define SET_12_HR_FRMT false
-#define SET_PM_FRMT false
+#define HR_12_FRMT false
+#define PM_FRMT false
 
 /* Macros for AbleButtons functions: */
 
@@ -29,6 +29,14 @@
 #define HOUR_IDX 3
 #define MIN_IDX 4
 #define SEC_IDX 5
+
+/* Each flag determines if it needs to be updated on the RTC module or not */
+#define UPDATE_DATE 0x01
+#define UPDATE_MONTH 0x02
+#define UPDATE_YEAR 0x04
+#define UPDATE_HOUR 0x08
+#define UPDATE_MIN 0x10
+#define UPDATE_SEC 0x20
 
 #define BLINKING_PARAM_MS 300UL
 #define BLINK_CLEAR_PARAM 0x00
@@ -52,8 +60,8 @@ Button *btns_menu[] = {
 
 ButtonList btnList(btns_menu);
 
-bool h12_flag = SET_12_HR_FRMT;
-bool pm_flag = SET_PM_FRMT;
+bool h12_flag = HR_12_FRMT;
+bool pm_flag = PM_FRMT;
 bool century = false;
 
 unsigned long prev_time_ms = 0;
@@ -82,9 +90,9 @@ struct rtc_date_t {
 struct rtc_time_t {
     char str_time[9]; /* 8 characters for the date + null character */
 
-    uint8_t hours;
-    uint8_t mins;
-    uint8_t secs;
+    uint8_t hour;
+    uint8_t min;
+    uint8_t sec;
 
     uint8_t str_lcd_col;
     uint8_t str_lcd_row;
@@ -127,18 +135,18 @@ void setup(void)
     rtc_date.pos_date_year = {11, 0};
 
     rtc_time.str_time[9] = {0};
-    rtc_time.hours = 0;
-    rtc_time.mins = 0;
-    rtc_time.secs = 0;
+    rtc_time.hour = 0;
+    rtc_time.min = 0;
+    rtc_time.sec = 0;
     rtc_time.str_lcd_col = 4;
     rtc_time.str_lcd_row = 1;
     rtc_time.pos_time_hr = {4, 1};
     rtc_time.pos_time_min = {7, 1};
     rtc_time.pos_time_sec = {10, 1};
 
-    rtc_time.hours = rtc.getHour(h12_flag, pm_flag);
-    rtc_time.mins = rtc.getMinute();
-    rtc_time.secs = rtc.getSecond();
+    rtc_time.hour = rtc.getHour(h12_flag, pm_flag);
+    rtc_time.min = rtc.getMinute();
+    rtc_time.sec = rtc.getSecond();
 
     rtc_date.date = rtc.getDate();
     rtc_date.month = rtc.getMonth(century);
@@ -165,11 +173,11 @@ void loop(void)
 
 void display_date_time(void)
 {
-    rtc_time.hours = rtc.getHour(h12_flag, pm_flag);
-    rtc_time.mins = rtc.getMinute();
-    rtc_time.secs = rtc.getSecond();
+    rtc_time.hour = rtc.getHour(h12_flag, pm_flag);
+    rtc_time.min = rtc.getMinute();
+    rtc_time.sec = rtc.getSecond();
 
-    sprintf(rtc_time.str_time, "%02u:%02u:%02u", rtc_time.hours, rtc_time.mins, rtc_time.secs);
+    sprintf(rtc_time.str_time, "%02u:%02u:%02u", rtc_time.hour, rtc_time.min, rtc_time.sec);
     lcd.setCursor(rtc_time.str_lcd_col, rtc_time.str_lcd_row);
     lcd.print(rtc_time.str_time);
 
@@ -184,9 +192,9 @@ void edit_date_time(void)
         rtc_date.date,
         rtc_date.month,
         rtc_date.year,
-        rtc_time.hours,
-        rtc_time.mins,
-        rtc_time.secs
+        rtc_time.hour,
+        rtc_time.min,
+        rtc_time.sec
     };
 
     char str_param[2] = {0};
@@ -194,6 +202,7 @@ void edit_date_time(void)
     uint8_t param_idx = 0;
     uint8_t tmp_lcd_col = 0;
     uint8_t tmp_lcd_row = 0;
+    uint8_t date_time_flags = 0x00;
 
     sprintf(str_param, "%02u", rtc_current[param_idx]);
 
@@ -221,7 +230,7 @@ void edit_date_time(void)
 
         /* Update the paramater with the new value and show it on the display */
         if (btn_set.isClicked() == true) {
-            increment_param(param_idx, &rtc_current[param_idx]);
+            increment_param(param_idx, &rtc_current[param_idx], &date_time_flags);
             
             sprintf(str_param, "%02u", rtc_current[param_idx]);
             lcd.setCursor(tmp_lcd_col, tmp_lcd_row);
@@ -229,6 +238,52 @@ void edit_date_time(void)
             
             /* It's important to always reset the click state button before requesting the next state */
             btn_set.resetClicked();
+        }
+    }
+
+    update_date_time(date_time_flags, rtc_current);
+}
+
+void update_date_time(uint8_t date_time_flags, uint8_t *current_date_time)
+{
+    uint8_t eval_flags;
+
+    /* Loop through each flag to determine which date and time parameters we have to update */
+    for( eval_flags = 0x01; (eval_flags <= UPDATE_SEC); eval_flags <<= 1) {
+        switch ( (eval_flags & date_time_flags) )
+        {
+        case UPDATE_DATE:
+            rtc_date.date = current_date_time[DATE_IDX];
+            rtc.setDate(rtc_date.date);
+            break;
+        
+        case UPDATE_MONTH:
+            rtc_date.month = current_date_time[MONTH_IDX];
+            rtc.setMonth(rtc_date.month);
+            break;
+        
+        case UPDATE_YEAR:
+            rtc_date.year = current_date_time[YEAR_IDX];
+            rtc.setYear(rtc_date.year);
+            break;
+        
+        case UPDATE_HOUR:
+            rtc_time.hour = current_date_time[HOUR_IDX];
+            rtc.setHour(rtc_time.hour);
+            break;
+        
+        case UPDATE_MIN:
+            rtc_time.min = current_date_time[MIN_IDX];
+            rtc.setMinute(rtc_time.min);
+            break;
+
+        case UPDATE_SEC:
+            rtc_time.sec = current_date_time[SEC_IDX];
+            rtc.setSecond(rtc_time.sec);
+            break;
+        
+        default:
+            break;
         }
     }
 }
@@ -256,7 +311,7 @@ void blink_parameter(uint8_t lcd_col, uint8_t lcd_row, char *str_param)
     }
 }
 
-void increment_param(uint8_t param_idx, uint8_t *param)
+void increment_param(uint8_t param_idx, uint8_t *param, uint8_t *date_time_flags)
 {
     /* Increment the value of the given parameter but always keep track when the variable has to be
      * reset after certain limit
@@ -265,22 +320,38 @@ void increment_param(uint8_t param_idx, uint8_t *param)
     {
     case DATE_IDX:
         *param = (*param == 31) ? 1 : (*param += 1);
+        *date_time_flags |= UPDATE_DATE;
         break;
+    
     case MONTH_IDX:
         *param = (*param == 12) ? 1 : (*param += 1);
+        *date_time_flags |= UPDATE_MONTH;
         break;
+    
     case YEAR_IDX:
         *param = (*param == 99) ? 0 : (*param += 1);
+        *date_time_flags |= UPDATE_YEAR;
         break;
+    
     case HOUR_IDX:
-        *param = (*param == 23) ? 0 : (*param += 1);
+        if (h12_flag == true) {
+            *param = (*param == 12) ? 0: (*param += 1);
+        } else {
+            *param = (*param == 23) ? 0 : (*param += 1);
+        }
+        *date_time_flags |= UPDATE_HOUR;
         break;
+    
     case MIN_IDX:
         *param = (*param == 59) ? 0 : (*param += 1);
+        *date_time_flags |= UPDATE_MIN;
         break;
+    
     case SEC_IDX:
         *param = (*param == 59) ? 0 : (*param += 1);
+        *date_time_flags |= UPDATE_SEC;
         break;
+    
     default:
         break;
     }
