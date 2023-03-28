@@ -181,6 +181,12 @@ void display_date_time(void)
     lcd.setCursor(rtc_time.str_lcd_col, rtc_time.str_lcd_row);
     lcd.print(rtc_time.str_time);
 
+    if( (rtc_time.hour == 0) && (rtc_time.min == 0) ) {
+        rtc_date.date = rtc.getDate();
+        rtc_date.month = rtc.getMonth(century);
+        rtc_date.year = rtc.getYear();
+    }
+
     sprintf(rtc_date.str_date, "%02u/%02u/20%02u", rtc_date.date, rtc_date.month, rtc_date.year);
     lcd.setCursor(rtc_date.str_lcd_col,rtc_date.str_lcd_row);
     lcd.print(rtc_date.str_date);
