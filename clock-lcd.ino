@@ -177,19 +177,20 @@ void display_date_time(void)
     rtc_time.min = rtc.getMinute();
     rtc_time.sec = rtc.getSecond();
 
-    sprintf(rtc_time.str_time, "%02u:%02u:%02u", rtc_time.hour, rtc_time.min, rtc_time.sec);
-    lcd.setCursor(rtc_time.str_lcd_col, rtc_time.str_lcd_row);
-    lcd.print(rtc_time.str_time);
-
     if( (rtc_time.hour == 0) && (rtc_time.min == 0) ) {
         rtc_date.date = rtc.getDate();
         rtc_date.month = rtc.getMonth(century);
         rtc_date.year = rtc.getYear();
     }
 
+    sprintf(rtc_time.str_time, "%02u:%02u:%02u", rtc_time.hour, rtc_time.min, rtc_time.sec);
     sprintf(rtc_date.str_date, "%02u/%02u/20%02u", rtc_date.date, rtc_date.month, rtc_date.year);
+
     lcd.setCursor(rtc_date.str_lcd_col,rtc_date.str_lcd_row);
     lcd.print(rtc_date.str_date);
+
+    lcd.setCursor(rtc_time.str_lcd_col, rtc_time.str_lcd_row);
+    lcd.print(rtc_time.str_time);
 }
 
 void edit_date_time(void)
@@ -300,20 +301,19 @@ void blink_parameter(uint8_t lcd_col, uint8_t lcd_row, char *str_param)
     static uint8_t param_txt_flag = 0x01;
     static uint16_t blink_current_time = 0;
     static uint16_t blink_prev_time = 0;
+    uint16_t blink_time = 0;
 
     blink_current_time = millis();
 
     /* After the time has elapsed, switch between the blank space or the parameter's characters */
-    if ( (blink_current_time - blink_prev_time) >= BLINKING_PARAM_MS) {
+    blink_time = blink_current_time - blink_prev_time;
+    
+    if (blink_time >= BLINKING_PARAM_MS) {
         blink_prev_time = blink_current_time;
         param_txt_flag ^= 1;
+        
         lcd.setCursor(lcd_col, lcd_row);
-
-        if (param_txt_flag == BLINK_CLEAR_PARAM) {
-            lcd.print(str_blank_space);
-        } else {
-            lcd.print(str_param);
-        }
+        (param_txt_flag == BLINK_CLEAR_PARAM) ? lcd.print(str_blank_space) : lcd.print(str_param);
     }
 }
 
