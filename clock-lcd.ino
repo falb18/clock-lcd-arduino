@@ -42,6 +42,8 @@
 #define BLINK_CLEAR_PARAM 0x00
 #define BLINK_SET_PARAM 0x01
 
+#define RESET_TIMER false
+
 LiquidCrystal_I2C lcd(0x27,16,2);
 
 DS3231 rtc;
@@ -64,8 +66,12 @@ bool h12_flag = HR_12_FRMT;
 bool pm_flag = PM_FRMT;
 bool century = false;
 
-unsigned long prev_time_ms = 0;
-unsigned long current_time_ms = 0;
+struct timer_t {
+    uint64_t prev_time_ms;
+    uint64_t current_time_ms;
+    uint64_t elapsed_time;
+    bool timer_done;
+}timer;
 
 struct lcd_position {
     uint8_t col;
@@ -120,8 +126,7 @@ void setup(void)
     btn_edit.setDebounceTime(20);
     btn_set.setDebounceTime(20);
 
-    prev_time_ms = millis();
-    current_time_ms = prev_time_ms;
+    reset_timer(&timer, 1000UL);
 
     /* Initialize variables for current date and time */
     rtc_date.str_date[11] = {0};
@@ -158,11 +163,11 @@ void setup(void)
 void loop(void)
 {
     btnList.handle();
-    current_time_ms = millis();
+    timer_timeout(&timer);
     
-    if ( (current_time_ms - prev_time_ms) >= 1000UL) {
+    if (timer.timer_done == true) {
         display_date_time();
-        prev_time_ms = current_time_ms;
+        timer.timer_done = RESET_TIMER;
     }
 
     if (btn_edit.isClicked() == true) {
@@ -360,5 +365,23 @@ void increment_param(uint8_t param_idx, uint8_t *param, uint8_t *date_time_flags
     
     default:
         break;
+    }
+}
+
+void reset_timer(struct timer_t *tmr, uint64_t milliseconds)
+{
+    tmr->prev_time_ms = millis();
+    tmr->current_time_ms = tmr->prev_time_ms;
+    tmr->elapsed_time = milliseconds;
+    tmr->timer_done = RESET_TIMER;
+}
+
+void timer_timeout(struct timer_t *tmr)
+{
+    tmr->current_time_ms = millis();
+    
+    if ((tmr->current_time_ms - tmr->prev_time_ms) >= tmr->elapsed_time) {
+        tmr->timer_done = true;
+        tmr->prev_time_ms = tmr->current_time_ms;
     }
 }
