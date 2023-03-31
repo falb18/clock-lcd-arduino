@@ -209,7 +209,7 @@ void edit_date_time(void)
         rtc_time.sec
     };
 
-    char str_param[2] = {0};
+    char str_param[3] = {0};
 
     uint8_t param_idx = 0;
     uint8_t tmp_lcd_col = 0;
