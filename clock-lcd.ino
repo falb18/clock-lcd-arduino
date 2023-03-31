@@ -42,7 +42,7 @@
 #define BLINK_CLEAR_PARAM 0x00
 #define BLINK_SET_PARAM 0x01
 
-#define RESET_TIMER false
+#define RESET_TIMER_VALUE false
 
 LiquidCrystal_I2C lcd(0x27,16,2);
 
@@ -70,7 +70,7 @@ struct timer_t {
     uint64_t prev_time_ms;
     uint64_t current_time_ms;
     uint64_t elapsed_time;
-    bool timer_done;
+    bool timeout;
 }timer;
 
 struct lcd_position {
@@ -165,9 +165,9 @@ void loop(void)
     btnList.handle();
     timer_timeout(&timer);
     
-    if (timer.timer_done == true) {
+    if (timer.timeout == true) {
         display_date_time();
-        timer.timer_done = RESET_TIMER;
+        timer.timeout = RESET_TIMER_VALUE;
     }
 
     if (btn_edit.isClicked() == true) {
@@ -217,6 +217,8 @@ void edit_date_time(void)
     uint8_t date_time_flags = 0x00;
 
     sprintf(str_param, "%02u", rtc_current[param_idx]);
+
+    reset_timer(&timer, BLINKING_PARAM_MS);
 
     /* Loop through each parameter in the date and time */
     while(param_idx <= NUM_DATE_TIME_PARAMS) {
@@ -304,17 +306,10 @@ void blink_parameter(uint8_t lcd_col, uint8_t lcd_row, char *str_param)
 {
     const char *str_blank_space = "  ";
     static uint8_t param_txt_flag = 0x01;
-    static uint16_t blink_current_time = 0;
-    static uint16_t blink_prev_time = 0;
-    uint16_t blink_time = 0;
-
-    blink_current_time = millis();
-
-    /* After the time has elapsed, switch between the blank space or the parameter's characters */
-    blink_time = blink_current_time - blink_prev_time;
-    
-    if (blink_time >= BLINKING_PARAM_MS) {
-        blink_prev_time = blink_current_time;
+ 
+    timer_timeout(&timer);
+    if(timer.timeout == true) {
+        timer.timeout = RESET_TIMER_VALUE;
         param_txt_flag ^= 1;
         
         lcd.setCursor(lcd_col, lcd_row);
@@ -373,7 +368,7 @@ void reset_timer(struct timer_t *tmr, uint64_t milliseconds)
     tmr->prev_time_ms = millis();
     tmr->current_time_ms = tmr->prev_time_ms;
     tmr->elapsed_time = milliseconds;
-    tmr->timer_done = RESET_TIMER;
+    tmr->timeout = RESET_TIMER_VALUE;
 }
 
 void timer_timeout(struct timer_t *tmr)
@@ -381,7 +376,7 @@ void timer_timeout(struct timer_t *tmr)
     tmr->current_time_ms = millis();
     
     if ((tmr->current_time_ms - tmr->prev_time_ms) >= tmr->elapsed_time) {
-        tmr->timer_done = true;
+        tmr->timeout = true;
         tmr->prev_time_ms = tmr->current_time_ms;
     }
 }
