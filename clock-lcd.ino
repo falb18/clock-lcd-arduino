@@ -230,19 +230,18 @@ void edit_date_time(void)
 
         /* Edit the next parameter on the LCD after the button edit is clicked */
         if(btn_edit.isClicked() == true) {
-            /* First, stop blinking animation on the previous paramater before blinking the next one */
+            /* First, stop blinking animation on the previous parameter before blinking the next one */
             lcd.setCursor(tmp_lcd_col, tmp_lcd_row);
             lcd.print(str_param);
 
-            /* Select the next characters that will start blinking */
             param_idx += 1;
             sprintf(str_param, "%02u", rtc_current[param_idx]);
 
-            /* It's important to always reset the click state button before requesting the next state */
             btn_edit.resetClicked();
+            continue;
         }
 
-        /* Update the paramater with the new value and show it on the display */
+        /* Update the parameter with the new value and show it on the display */
         if (btn_set.isClicked() == true) {
             increment_param(param_idx, &rtc_current[param_idx], &date_time_flags);
             
@@ -250,7 +249,6 @@ void edit_date_time(void)
             lcd.setCursor(tmp_lcd_col, tmp_lcd_row);
             lcd.print(str_param);
             
-            /* It's important to always reset the click state button before requesting the next state */
             btn_set.resetClicked();
         }
     }
@@ -308,13 +306,15 @@ void blink_parameter(uint8_t lcd_col, uint8_t lcd_row, char *str_param)
     static uint8_t param_txt_flag = 0x01;
  
     timer_timeout(&timer);
-    if(timer.timeout == true) {
-        timer.timeout = RESET_TIMER_VALUE;
-        param_txt_flag ^= 1;
-        
-        lcd.setCursor(lcd_col, lcd_row);
-        (param_txt_flag == BLINK_CLEAR_PARAM) ? lcd.print(str_blank_space) : lcd.print(str_param);
+    if(timer.timeout == false) {
+        return;
     }
+
+    timer.timeout = RESET_TIMER_VALUE;
+    param_txt_flag ^= 1;
+    
+    lcd.setCursor(lcd_col, lcd_row);
+    (param_txt_flag == BLINK_CLEAR_PARAM) ? lcd.print(str_blank_space) : lcd.print(str_param);
 }
 
 void increment_param(uint8_t param_idx, uint8_t *param, uint8_t *date_time_flags)
