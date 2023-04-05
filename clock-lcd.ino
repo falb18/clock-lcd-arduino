@@ -43,9 +43,10 @@
 #define UPDATE_DATE 0x01
 #define UPDATE_MONTH 0x02
 #define UPDATE_YEAR 0x04
-#define UPDATE_HOUR 0x08
-#define UPDATE_MIN 0x10
-#define UPDATE_SEC 0x20
+#define UPDATE_WEEK 0x08
+#define UPDATE_HOUR 0x10
+#define UPDATE_MIN 0x20
+#define UPDATE_SEC 0x40
 
 #define BLINKING_PARAM_MS 300UL
 #define BLINK_CLEAR_PARAM 0x00
@@ -244,6 +245,7 @@ void edit_date_time(void)
     uint8_t tmp_lcd_col = 0;
     uint8_t tmp_lcd_row = 0;
     uint8_t date_time_flags = 0x00;
+    uint8_t str_week_idx = 0;
 
     reset_timer(&timer, BLINKING_PARAM_MS);
 
@@ -255,7 +257,8 @@ void edit_date_time(void)
         tmp_lcd_row = date_time_positions[param_idx]->row;
 
         if(param_idx == WEEK_IDX) {
-            sprintf(str_param, "%s", str_days_week[rtc_current[param_idx]]);
+            str_week_idx = rtc_current[param_idx];
+            sprintf(str_param, "%s", str_days_week[str_week_idx]);
         } else {
             sprintf(str_param, "%02u", rtc_current[param_idx]);
         }
@@ -309,6 +312,11 @@ void update_date_time(uint8_t date_time_flags, uint8_t *current_date_time)
         case UPDATE_YEAR:
             rtc_date.year = current_date_time[YEAR_IDX];
             rtc.setYear(rtc_date.year);
+            break;
+        
+        case UPDATE_WEEK:
+            rtc_date.day_week = current_date_time[WEEK_IDX];
+            rtc.setDoW(rtc_date.day_week);
             break;
         
         case UPDATE_HOUR:
@@ -370,6 +378,11 @@ void increment_param(uint8_t param_idx, uint8_t *param, uint8_t *date_time_flags
     case YEAR_IDX:
         *param = (*param == 99) ? 0 : (*param += 1);
         *date_time_flags |= UPDATE_YEAR;
+        break;
+    
+    case WEEK_IDX:
+        *param = (*param == 6) ? 0 : (*param += 1);
+        *date_time_flags |= UPDATE_WEEK;
         break;
     
     case HOUR_IDX:
