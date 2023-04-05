@@ -267,7 +267,7 @@ void edit_date_time(void)
 
         /* Edit the next parameter on the LCD after the button edit is clicked */
         if(btn_edit.isClicked() == true) {
-            /* First, stop blinking animation on the previous parameter before blinking the next one */
+            /* First, stop blinking animation on the current parameter before blinking the next one */
             lcd.setCursor(tmp_lcd_col, tmp_lcd_row);
             lcd.print(str_param);
 
@@ -353,8 +353,9 @@ void blink_parameter(uint8_t param_idx, uint8_t lcd_col, uint8_t lcd_row, char *
     timer.timeout = RESET_TIMER_VALUE;
     param_txt_flag ^= 1;
 
-    lcd.setCursor(lcd_col, lcd_row);
     (param_idx != WEEK_IDX) ? sprintf(str_blank_space, "%s", "  ") : sprintf(str_blank_space, "%s", "   ");
+    
+    lcd.setCursor(lcd_col, lcd_row);
     (param_txt_flag == BLINK_CLEAR_PARAM) ? lcd.print(str_blank_space) : lcd.print(str_param);
 }
 
