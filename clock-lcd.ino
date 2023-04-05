@@ -366,41 +366,41 @@ void increment_param(uint8_t param_idx, uint8_t *param, uint8_t *date_time_flags
     switch (param_idx)
     {
     case DATE_IDX:
-        *param = (*param == 31) ? 1 : (*param += 1);
+        (*param == 31) ? (*param = 1) : (*param += 1);
         *date_time_flags |= UPDATE_DATE;
         break;
     
     case MONTH_IDX:
-        *param = (*param == 12) ? 1 : (*param += 1);
+        (*param == 12) ? (*param = 1) : (*param += 1);
         *date_time_flags |= UPDATE_MONTH;
         break;
     
     case YEAR_IDX:
-        *param = (*param == 99) ? 0 : (*param += 1);
+        (*param == 99) ? (*param = 0) : (*param += 1);
         *date_time_flags |= UPDATE_YEAR;
         break;
     
     case WEEK_IDX:
-        *param = (*param == 6) ? 0 : (*param += 1);
+        (*param == 6) ? (*param = 0) : (*param += 1);
         *date_time_flags |= UPDATE_WEEK;
         break;
     
     case HOUR_IDX:
         if (h12_flag == true) {
-            *param = (*param == 12) ? 0: (*param += 1);
+            (*param == 12) ? (*param = 0) : (*param += 1);
         } else {
-            *param = (*param == 23) ? 0 : (*param += 1);
+            (*param == 23) ? (*param = 0) : (*param += 1);
         }
         *date_time_flags |= UPDATE_HOUR;
         break;
     
     case MIN_IDX:
-        *param = (*param == 59) ? 0 : (*param += 1);
+        (*param == 59) ? (*param = 0) : (*param += 1);
         *date_time_flags |= UPDATE_MIN;
         break;
     
     case SEC_IDX:
-        *param = (*param == 59) ? 0 : (*param += 1);
+        (*param == 59) ? (*param = 0) : (*param += 1);
         *date_time_flags |= UPDATE_SEC;
         break;
     
