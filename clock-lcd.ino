@@ -6,6 +6,8 @@
 #include <DS3231.h>
 #include <AbleButtons.h>
 
+#include "timer_module.h"
+
 /* Macros for DS3231 functions */
 #define HR_12_FRMT false
 #define PM_FRMT false
@@ -52,8 +54,6 @@
 #define BLINK_CLEAR_PARAM 0x00
 #define BLINK_SET_PARAM 0x01
 
-#define RESET_TIMER_VALUE false
-
 LiquidCrystal_I2C lcd(0x27,16,2);
 
 DS3231 rtc;
@@ -86,12 +86,7 @@ char *str_days_week[] = {
     "SUN"
 };
 
-struct timer_t {
-    uint64_t prev_time_ms;
-    uint64_t current_time_ms;
-    uint64_t elapsed_time;
-    bool timeout;
-}timer;
+struct timer_t timer;
 
 struct lcd_position {
     uint8_t col;
@@ -407,23 +402,5 @@ void increment_param(uint8_t param_idx, uint8_t *param, uint8_t *date_time_flags
     
     default:
         break;
-    }
-}
-
-void reset_timer(struct timer_t *tmr, uint64_t milliseconds)
-{
-    tmr->prev_time_ms = millis();
-    tmr->current_time_ms = tmr->prev_time_ms;
-    tmr->elapsed_time = milliseconds;
-    tmr->timeout = RESET_TIMER_VALUE;
-}
-
-void timer_timeout(struct timer_t *tmr)
-{
-    tmr->current_time_ms = millis();
-    
-    if ((tmr->current_time_ms - tmr->prev_time_ms) >= tmr->elapsed_time) {
-        tmr->timeout = true;
-        tmr->prev_time_ms = tmr->current_time_ms;
     }
 }
