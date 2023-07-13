@@ -1,4 +1,4 @@
-# Clock LCD
+# Clock LCD Arduino
 
 The purpose of this project is to implement the same menus and settings seen in some chinese DIY clock kits but using
 the Arduino Nano. Here is a picture of the project:
