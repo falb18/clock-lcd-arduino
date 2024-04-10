@@ -23,7 +23,7 @@
 /* Application macros: */
 
 /* The total number of editable paramaters in date and time strings */
-#define NUM_DATE_TIME_PARAMS 6
+#define NUM_DATE_TIME_PARAMS 7
 
 #define DATE_IDX 0
 #define MONTH_IDX 1
@@ -32,6 +32,7 @@
 #define HOUR_IDX 4
 #define MIN_IDX 5
 #define SEC_IDX 6
+#define HOUR_MODE_IDX 7
 
 #define MONDAY_IDX 0
 #define TUESDAY_IDX 1
@@ -49,6 +50,7 @@
 #define UPDATE_HOUR 0x10
 #define UPDATE_MIN 0x20
 #define UPDATE_SEC 0x40
+#define UPDATE_HOUR_MODE 0x80
 
 #define BLINKING_PARAM_MS 300UL
 #define BLINK_CLEAR_PARAM 0x00
@@ -72,8 +74,6 @@ Button *btns_menu[] = {
 
 ButtonList btnList(btns_menu);
 
-bool h12_flag = HR_12_FRMT;
-bool pm_flag = PM_FRMT;
 bool century = false;
 
 char *str_days_week[] = {
@@ -84,6 +84,16 @@ char *str_days_week[] = {
     "FRI",
     "SAT",
     "SUN"
+};
+
+char *str_hour_modes[] = {
+    "24h",
+    "12h"
+};
+
+char *str_am_pm[] = {
+    "AM",
+    "PM"
 };
 
 struct timer_t timer;
@@ -112,11 +122,16 @@ struct rtc_date_t {
 }rtc_date;
 
 struct rtc_time_t {
-    char str_time[9]; /* 8 characters for the time + null character */
+    /* 8 characters for the time + space character + 3 characters for the hour mode + null character */
+    char str_time[13];
 
     uint8_t hour;
     uint8_t min;
     uint8_t sec;
+    
+    uint8_t hour_mode;
+    bool h12_flag;
+    bool pm_flag;
 
     uint8_t str_lcd_col;
     uint8_t str_lcd_row;
@@ -124,16 +139,18 @@ struct rtc_time_t {
     lcd_position pos_time_hr;
     lcd_position pos_time_min;
     lcd_position pos_time_sec;
+    lcd_position pos_hour_mode;
 }rtc_time;
 
-struct lcd_position *date_time_positions[7] = {
+struct lcd_position *date_time_positions[] = {
     &rtc_date.pos_date_date,
     &rtc_date.pos_date_month,
     &rtc_date.pos_date_year,
     &rtc_date.pos_day_week,
     &rtc_time.pos_time_hr,
     &rtc_time.pos_time_min,
-    &rtc_time.pos_time_sec
+    &rtc_time.pos_time_sec,
+    &rtc_time.pos_hour_mode
 };
 
 void setup(void)
@@ -159,17 +176,21 @@ void setup(void)
     rtc_date.pos_date_year = {9, 0};
     rtc_date.pos_day_week = {12, 0};
 
-    rtc_time.str_time[9] = {0};
+    rtc_time.str_time[13] = {0};
     rtc_time.hour = 0;
     rtc_time.min = 0;
     rtc_time.sec = 0;
+    rtc_time.hour_mode = 0;
+    rtc_time.h12_flag = HR_12_FRMT;
+    rtc_time.pm_flag = PM_FRMT;
     rtc_time.str_lcd_col = 4;
     rtc_time.str_lcd_row = 1;
     rtc_time.pos_time_hr = {4, 1};
     rtc_time.pos_time_min = {7, 1};
     rtc_time.pos_time_sec = {10, 1};
+    rtc_time.pos_hour_mode = {13, 1};
 
-    rtc_time.hour = rtc.getHour(h12_flag, pm_flag);
+    rtc_time.hour = rtc.getHour(rtc_time.h12_flag, rtc_time.pm_flag);
     rtc_time.min = rtc.getMinute();
     rtc_time.sec = rtc.getSecond();
 
@@ -199,7 +220,10 @@ void loop(void)
 
 void display_date_time(void)
 {
-    rtc_time.hour = rtc.getHour(h12_flag, pm_flag);
+    uint8_t am_pm_idx = 0;
+    
+    rtc_time.hour = rtc.getHour(rtc_time.h12_flag, rtc_time.pm_flag);
+    (rtc_time.h12_flag == true) ? (rtc_time.hour_mode = 1) : (rtc_time.hour_mode = 0);
     rtc_time.min = rtc.getMinute();
     rtc_time.sec = rtc.getSecond();
 
@@ -209,7 +233,14 @@ void display_date_time(void)
         rtc_date.year = rtc.getYear();
     }
 
-    sprintf(rtc_time.str_time, "%02u:%02u:%02u", rtc_time.hour, rtc_time.min, rtc_time.sec);
+    if (rtc_time.h12_flag == true) {
+        am_pm_idx = (rtc_time.pm_flag == true) ? 1 : 0;
+        sprintf(rtc_time.str_time, "%02u:%02u:%02u %s",
+                rtc_time.hour, rtc_time.min, rtc_time.sec, str_am_pm[am_pm_idx]);
+    } else {
+        sprintf(rtc_time.str_time, "%02u:%02u:%02u", rtc_time.hour, rtc_time.min, rtc_time.sec);
+    }
+    
     sprintf(rtc_date.str_date, "%02u/%02u/20%02u %s",
                 rtc_date.date, rtc_date.month, rtc_date.year,
                 str_days_week[rtc_date.day_week]);
@@ -223,14 +254,15 @@ void display_date_time(void)
 
 void edit_date_time(void)
 {
-    byte rtc_current[7] = {
+    uint8_t rtc_current[] = {
         rtc_date.date,
         rtc_date.month,
         rtc_date.year,
         rtc_date.day_week,
         rtc_time.hour,
         rtc_time.min,
-        rtc_time.sec
+        rtc_time.sec,
+        rtc_time.hour_mode
     };
 
     /* 2 chars for date or time, 3 chars for day of the week + null character */
@@ -241,8 +273,13 @@ void edit_date_time(void)
     uint8_t tmp_lcd_row = 0;
     uint8_t date_time_flags = 0x00;
     uint8_t str_week_idx = 0;
+    uint8_t str_hour_mode_idx = 0;
 
     reset_timer(&timer, BLINKING_PARAM_MS);
+
+    /* In "Edit mode" display the 12/24 hour mode */
+    lcd.setCursor(rtc_time.pos_hour_mode.col, rtc_time.pos_hour_mode.row);
+    lcd.print(str_hour_modes[rtc_current[HOUR_MODE_IDX]]);
 
     /* Loop through each parameter in the date and time */
     while(param_idx <= NUM_DATE_TIME_PARAMS) {
@@ -251,9 +288,13 @@ void edit_date_time(void)
         tmp_lcd_col = date_time_positions[param_idx]->col;
         tmp_lcd_row = date_time_positions[param_idx]->row;
 
-        if(param_idx == WEEK_IDX) {
+        /* Get the string of the parameter which is going to blink */
+        if (param_idx == WEEK_IDX) {
             str_week_idx = rtc_current[param_idx];
             sprintf(str_param, "%s", str_days_week[str_week_idx]);
+        } else if (param_idx == HOUR_MODE_IDX) {
+            str_hour_mode_idx = rtc_current[param_idx];
+            sprintf(str_param, "%s", str_hour_modes[str_hour_mode_idx]);
         } else {
             sprintf(str_param, "%02u", rtc_current[param_idx]);
         }
@@ -283,6 +324,10 @@ void edit_date_time(void)
         }
     }
 
+    /* Stop showing the 12/24 hour mode */
+    lcd.setCursor(rtc_time.pos_hour_mode.col, rtc_time.pos_hour_mode.row);
+    lcd.print("   ");
+
     update_date_time(date_time_flags, rtc_current);
 }
 
@@ -291,7 +336,7 @@ void update_date_time(uint8_t date_time_flags, uint8_t *current_date_time)
     uint8_t eval_flags;
 
     /* Loop through each flag to determine which date and time parameters we have to update */
-    for( eval_flags = 0x01; (eval_flags <= UPDATE_SEC); eval_flags <<= 1) {
+    for (eval_flags = 0x01; (eval_flags != 0x00); eval_flags <<= 1) {
         switch ( (eval_flags & date_time_flags) )
         {
         case UPDATE_DATE:
@@ -329,12 +374,18 @@ void update_date_time(uint8_t date_time_flags, uint8_t *current_date_time)
             rtc.setSecond(rtc_time.sec);
             break;
         
+        case UPDATE_HOUR_MODE:
+            (current_date_time[HOUR_MODE_IDX] == 1) ?
+                (rtc.setClockMode(true)) : (rtc.setClockMode(false));
+            break;
+
         default:
             break;
         }
     }
 }
 
+/* This funciton creates the blinking effect in each parameter */
 void blink_parameter(uint8_t param_idx, uint8_t lcd_col, uint8_t lcd_row, char *str_param)
 {
    char str_blank_space[4] = {0}; 
@@ -346,6 +397,7 @@ void blink_parameter(uint8_t param_idx, uint8_t lcd_col, uint8_t lcd_row, char *
     }
 
     timer.timeout = RESET_TIMER_VALUE;
+    /* Alternate between 0 and 1. 1 = show text, 0 = blank space */
     param_txt_flag ^= 1;
 
     (param_idx != WEEK_IDX) ? sprintf(str_blank_space, "%s", "  ") : sprintf(str_blank_space, "%s", "   ");
@@ -382,7 +434,7 @@ void increment_param(uint8_t param_idx, uint8_t *param, uint8_t *date_time_flags
         break;
     
     case HOUR_IDX:
-        if (h12_flag == true) {
+        if (rtc_time.h12_flag == true) {
             (*param == 12) ? (*param = 0) : (*param += 1);
         } else {
             (*param == 23) ? (*param = 0) : (*param += 1);
@@ -398,6 +450,11 @@ void increment_param(uint8_t param_idx, uint8_t *param, uint8_t *date_time_flags
     case SEC_IDX:
         (*param == 59) ? (*param = 0) : (*param += 1);
         *date_time_flags |= UPDATE_SEC;
+        break;
+
+    case HOUR_MODE_IDX:
+        (*param == 1) ? (*param = 0) : (*param += 1);
+        *date_time_flags |= UPDATE_HOUR_MODE;
         break;
     
     default:
