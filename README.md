@@ -5,14 +5,9 @@ the Arduino Nano. Here is a picture of the project:
 
 <img src="./imgs/clock-arduino-v0.2.png" alt="alt_text" width="450" height="auto">
 
-Chinese clock kit:
+## Instructions to use the clock
 
-<img src="./imgs/candlelight-effect-lcd.jpg" alt="alt_text" width="250" height="auto">
-
-The following video shows the different menus and settings the kit has. The goals is to achive a similar level of
-functionality with this project.
-
-[![Watch the video](https://img.youtube.com/vi/bsuRm4qQIkY/hqdefault.jpg)](https://www.youtube.com/watch?v=bsuRm4qQIkY)
+Read the user manual to know how to use the clock: [user-manual](./docs/user-manual.md)
 
 This project uses the following libraries:
 - [LiquidCrystal_I2C v1.1.3](https://github.com/johnrickman/LiquidCrystal_I2C/releases/tag/1.1.3)
