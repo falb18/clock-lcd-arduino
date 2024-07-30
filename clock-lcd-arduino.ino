@@ -86,12 +86,12 @@ char *str_days_week[] = {
     "SUN"
 };
 
-char *str_hour_modes[] = {
+const char *str_hour_modes[] = {
     "24h",
     "12h"
 };
 
-char *str_am_pm[] = {
+const char *str_am_pm[] = {
     "AM",
     "PM"
 };
@@ -103,9 +103,9 @@ struct lcd_position {
     uint8_t row;
 };
 
-struct rtc_date_t {
+struct str_date_t {
     /* 10 characters for the date + space + 3 characters for the day of the week + null character */
-    char str_date[15];
+    char str_date[20];
 
     uint8_t date;
     uint8_t month;
@@ -119,9 +119,9 @@ struct rtc_date_t {
     lcd_position pos_date_month;
     lcd_position pos_date_year;
     lcd_position pos_day_week;
-}rtc_date;
+}str_date;
 
-struct rtc_time_t {
+struct str_time_t {
     /* 8 characters for the time + space character + 3 characters for the hour mode + null character */
     char str_time[13];
 
@@ -140,17 +140,17 @@ struct rtc_time_t {
     lcd_position pos_time_min;
     lcd_position pos_time_sec;
     lcd_position pos_hour_mode;
-}rtc_time;
+}str_time;
 
 struct lcd_position *date_time_positions[] = {
-    &rtc_date.pos_date_date,
-    &rtc_date.pos_date_month,
-    &rtc_date.pos_date_year,
-    &rtc_date.pos_day_week,
-    &rtc_time.pos_time_hr,
-    &rtc_time.pos_time_min,
-    &rtc_time.pos_time_sec,
-    &rtc_time.pos_hour_mode
+    &str_date.pos_date_date,
+    &str_date.pos_date_month,
+    &str_date.pos_date_year,
+    &str_date.pos_day_week,
+    &str_time.pos_time_hr,
+    &str_time.pos_time_min,
+    &str_time.pos_time_sec,
+    &str_time.pos_hour_mode
 };
 
 void setup(void)
@@ -165,39 +165,39 @@ void setup(void)
     reset_timer(&timer, 1000UL);
 
     /* Initialize variables for current date and time */
-    rtc_date.str_date[11] = {0};
-    rtc_date.date = 0;
-    rtc_date.month = 0;
-    rtc_date.year = 0;
-    rtc_date.str_lcd_col = 1;
-    rtc_date.str_lcd_row = 0;
-    rtc_date.pos_date_date = {1, 0};
-    rtc_date.pos_date_month = {4, 0};
-    rtc_date.pos_date_year = {9, 0};
-    rtc_date.pos_day_week = {12, 0};
+    str_date.str_date[11] = {0};
+    str_date.date = 0;
+    str_date.month = 0;
+    str_date.year = 0;
+    str_date.str_lcd_col = 1;
+    str_date.str_lcd_row = 0;
+    str_date.pos_date_date = {1, 0};
+    str_date.pos_date_month = {4, 0};
+    str_date.pos_date_year = {9, 0};
+    str_date.pos_day_week = {12, 0};
 
-    rtc_time.str_time[13] = {0};
-    rtc_time.hour = 0;
-    rtc_time.min = 0;
-    rtc_time.sec = 0;
-    rtc_time.hour_mode = 0;
-    rtc_time.h12_flag = HR_12_FRMT;
-    rtc_time.pm_flag = PM_FRMT;
-    rtc_time.str_lcd_col = 4;
-    rtc_time.str_lcd_row = 1;
-    rtc_time.pos_time_hr = {4, 1};
-    rtc_time.pos_time_min = {7, 1};
-    rtc_time.pos_time_sec = {10, 1};
-    rtc_time.pos_hour_mode = {13, 1};
+    str_time.str_time[13] = {0};
+    str_time.hour = 0;
+    str_time.min = 0;
+    str_time.sec = 0;
+    str_time.hour_mode = 0;
+    str_time.h12_flag = HR_12_FRMT;
+    str_time.pm_flag = PM_FRMT;
+    str_time.str_lcd_col = 4;
+    str_time.str_lcd_row = 1;
+    str_time.pos_time_hr = {4, 1};
+    str_time.pos_time_min = {7, 1};
+    str_time.pos_time_sec = {10, 1};
+    str_time.pos_hour_mode = {13, 1};
 
-    rtc_time.hour = rtc.getHour(rtc_time.h12_flag, rtc_time.pm_flag);
-    rtc_time.min = rtc.getMinute();
-    rtc_time.sec = rtc.getSecond();
+    str_time.hour = rtc.getHour(str_time.h12_flag, str_time.pm_flag);
+    str_time.min = rtc.getMinute();
+    str_time.sec = rtc.getSecond();
 
-    rtc_date.date = rtc.getDate();
-    rtc_date.month = rtc.getMonth(century);
-    rtc_date.year = rtc.getYear();
-    rtc_date.day_week = rtc.getDoW();
+    str_date.date = rtc.getDate();
+    str_date.month = rtc.getMonth(century);
+    str_date.year = rtc.getYear();
+    str_date.day_week = rtc.getDoW();
 
     display_date_time();
 }
@@ -222,47 +222,47 @@ void display_date_time(void)
 {
     uint8_t am_pm_idx = 0;
     
-    rtc_time.hour = rtc.getHour(rtc_time.h12_flag, rtc_time.pm_flag);
-    (rtc_time.h12_flag == true) ? (rtc_time.hour_mode = 1) : (rtc_time.hour_mode = 0);
-    rtc_time.min = rtc.getMinute();
-    rtc_time.sec = rtc.getSecond();
+    str_time.hour = rtc.getHour(str_time.h12_flag, str_time.pm_flag);
+    (str_time.h12_flag == true) ? (str_time.hour_mode = 1) : (str_time.hour_mode = 0);
+    str_time.min = rtc.getMinute();
+    str_time.sec = rtc.getSecond();
 
-    if( (rtc_time.hour == 0) && (rtc_time.min == 0) ) {
-        rtc_date.date = rtc.getDate();
-        rtc_date.month = rtc.getMonth(century);
-        rtc_date.year = rtc.getYear();
+    if( (str_time.hour == 0) && (str_time.min == 0) ) {
+        str_date.date = rtc.getDate();
+        str_date.month = rtc.getMonth(century);
+        str_date.year = rtc.getYear();
     }
 
-    if (rtc_time.h12_flag == true) {
-        am_pm_idx = (rtc_time.pm_flag == true) ? 1 : 0;
-        sprintf(rtc_time.str_time, "%02u:%02u:%02u %s",
-                rtc_time.hour, rtc_time.min, rtc_time.sec, str_am_pm[am_pm_idx]);
+    if (str_time.h12_flag == true) {
+        am_pm_idx = (str_time.pm_flag == true) ? 1 : 0;
+        sprintf(str_time.str_time, "%02u:%02u:%02u %s",
+                str_time.hour, str_time.min, str_time.sec, str_am_pm[am_pm_idx]);
     } else {
-        sprintf(rtc_time.str_time, "%02u:%02u:%02u", rtc_time.hour, rtc_time.min, rtc_time.sec);
+        sprintf(str_time.str_time, "%02u:%02u:%02u", str_time.hour, str_time.min, str_time.sec);
     }
     
-    sprintf(rtc_date.str_date, "%02u/%02u/20%02u %s",
-                rtc_date.date, rtc_date.month, rtc_date.year,
-                str_days_week[rtc_date.day_week]);
+    sprintf(str_date.str_date, "%02u/%02u/20%02u %s",
+                str_date.date, str_date.month, str_date.year,
+                str_days_week[str_date.day_week]);
 
-    lcd.setCursor(rtc_date.str_lcd_col,rtc_date.str_lcd_row);
-    lcd.print(rtc_date.str_date);
+    lcd.setCursor(str_date.str_lcd_col,str_date.str_lcd_row);
+    lcd.print(str_date.str_date);
 
-    lcd.setCursor(rtc_time.str_lcd_col, rtc_time.str_lcd_row);
-    lcd.print(rtc_time.str_time);
+    lcd.setCursor(str_time.str_lcd_col, str_time.str_lcd_row);
+    lcd.print(str_time.str_time);
 }
 
 void edit_date_time(void)
 {
     uint8_t rtc_current[] = {
-        rtc_date.date,
-        rtc_date.month,
-        rtc_date.year,
-        rtc_date.day_week,
-        rtc_time.hour,
-        rtc_time.min,
-        rtc_time.sec,
-        rtc_time.hour_mode
+        str_date.date,
+        str_date.month,
+        str_date.year,
+        str_date.day_week,
+        str_time.hour,
+        str_time.min,
+        str_time.sec,
+        str_time.hour_mode
     };
 
     /* 2 chars for date or time, 3 chars for day of the week + null character */
@@ -278,10 +278,12 @@ void edit_date_time(void)
     reset_timer(&timer, BLINKING_PARAM_MS);
 
     /* In "Edit mode" display the 12/24 hour mode */
-    lcd.setCursor(rtc_time.pos_hour_mode.col, rtc_time.pos_hour_mode.row);
+    lcd.setCursor(str_time.pos_hour_mode.col, str_time.pos_hour_mode.row);
     lcd.print(str_hour_modes[rtc_current[HOUR_MODE_IDX]]);
 
-    /* Loop through each parameter in the date and time */
+    /* Loop through each parameter in the date and time
+     * Exit from the "Edit mode" only after last parameter is reached
+     */
     while(param_idx <= NUM_DATE_TIME_PARAMS) {
         btnList.handle();
 
@@ -325,7 +327,7 @@ void edit_date_time(void)
     }
 
     /* Stop showing the 12/24 hour mode */
-    lcd.setCursor(rtc_time.pos_hour_mode.col, rtc_time.pos_hour_mode.row);
+    lcd.setCursor(str_time.pos_hour_mode.col, str_time.pos_hour_mode.row);
     lcd.print("   ");
 
     update_date_time(date_time_flags, rtc_current);
@@ -340,38 +342,38 @@ void update_date_time(uint8_t date_time_flags, uint8_t *current_date_time)
         switch ( (eval_flags & date_time_flags) )
         {
         case UPDATE_DATE:
-            rtc_date.date = current_date_time[DATE_IDX];
-            rtc.setDate(rtc_date.date);
+            str_date.date = current_date_time[DATE_IDX];
+            rtc.setDate(str_date.date);
             break;
         
         case UPDATE_MONTH:
-            rtc_date.month = current_date_time[MONTH_IDX];
-            rtc.setMonth(rtc_date.month);
+            str_date.month = current_date_time[MONTH_IDX];
+            rtc.setMonth(str_date.month);
             break;
         
         case UPDATE_YEAR:
-            rtc_date.year = current_date_time[YEAR_IDX];
-            rtc.setYear(rtc_date.year);
+            str_date.year = current_date_time[YEAR_IDX];
+            rtc.setYear(str_date.year);
             break;
         
         case UPDATE_WEEK:
-            rtc_date.day_week = current_date_time[WEEK_IDX];
-            rtc.setDoW(rtc_date.day_week);
+            str_date.day_week = current_date_time[WEEK_IDX];
+            rtc.setDoW(str_date.day_week);
             break;
         
         case UPDATE_HOUR:
-            rtc_time.hour = current_date_time[HOUR_IDX];
-            rtc.setHour(rtc_time.hour);
+            str_time.hour = current_date_time[HOUR_IDX];
+            rtc.setHour(str_time.hour);
             break;
         
         case UPDATE_MIN:
-            rtc_time.min = current_date_time[MIN_IDX];
-            rtc.setMinute(rtc_time.min);
+            str_time.min = current_date_time[MIN_IDX];
+            rtc.setMinute(str_time.min);
             break;
 
         case UPDATE_SEC:
-            rtc_time.sec = current_date_time[SEC_IDX];
-            rtc.setSecond(rtc_time.sec);
+            str_time.sec = current_date_time[SEC_IDX];
+            rtc.setSecond(str_time.sec);
             break;
         
         case UPDATE_HOUR_MODE:
@@ -434,7 +436,7 @@ void increment_param(uint8_t param_idx, uint8_t *param, uint8_t *date_time_flags
         break;
     
     case HOUR_IDX:
-        if (rtc_time.h12_flag == true) {
+        if (str_time.h12_flag == true) {
             (*param == 12) ? (*param = 0) : (*param += 1);
         } else {
             (*param == 23) ? (*param = 0) : (*param += 1);
