@@ -99,9 +99,6 @@ struct str_date_t {
     uint8_t year;
     uint8_t day_week;
 
-    uint8_t str_lcd_col;
-    uint8_t str_lcd_row;
-
     lcd_position pos_date_date;
     lcd_position pos_date_month;
     lcd_position pos_date_year;
@@ -119,9 +116,6 @@ struct str_time_t {
     uint8_t hour_mode;
     bool h12_flag;
     bool pm_flag;
-
-    uint8_t str_lcd_col;
-    uint8_t str_lcd_row;
 
     lcd_position pos_time_hr;
     lcd_position pos_time_min;
@@ -156,8 +150,6 @@ void setup(void)
     str_date.date = 0;
     str_date.month = 0;
     str_date.year = 0;
-    str_date.str_lcd_col = 1;
-    str_date.str_lcd_row = 0;
     str_date.pos_date_date = {1, 0};
     str_date.pos_date_month = {4, 0};
     str_date.pos_date_year = {9, 0};
@@ -170,8 +162,6 @@ void setup(void)
     str_time.hour_mode = 0;
     str_time.h12_flag = HR_12_FRMT;
     str_time.pm_flag = PM_FRMT;
-    str_time.str_lcd_col = 4;
-    str_time.str_lcd_row = 1;
     str_time.pos_time_hr = {4, 1};
     str_time.pos_time_min = {7, 1};
     str_time.pos_time_sec = {10, 1};
@@ -232,10 +222,10 @@ void display_date_time(void)
                 str_date.date, str_date.month, str_date.year,
                 str_days_week[str_date.day_week]);
 
-    lcd.setCursor(str_date.str_lcd_col,str_date.str_lcd_row);
+    lcd.setCursor(str_date.pos_date_date.col,str_date.pos_date_date.row);
     lcd.print(str_date.str_date);
 
-    lcd.setCursor(str_time.str_lcd_col, str_time.str_lcd_row);
+    lcd.setCursor(str_time.pos_time_hr.col, str_time.pos_time_hr.row);
     lcd.print(str_time.str_time);
 }
 
