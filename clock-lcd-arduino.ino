@@ -87,12 +87,13 @@ const char *str_hour_modes[] = {"24h", "12h"};
 
 const char *str_am_pm[] = {"AM", "PM"};
 
-struct timer_t timer;
+/* 10 characters for the date + space + 3 characters for the day of the week + null character */
+char str_date[15];
 
-struct lcd_position {
-    uint8_t col;
-    uint8_t row;
-};
+/* 8 characters for the time + space character + 3 characters for the hour mode + null character */
+char str_time[13];
+
+struct timer_t timer;
 
 struct date_time_t {
     uint8_t date;
@@ -109,35 +110,30 @@ struct date_time_t {
     bool pm_flag;
 } date_time;
 
-struct str_date_t {
-    /* 10 characters for the date + space + 3 characters for the day of the week + null character */
-    char str[15];
+struct lcd_position {
+    uint8_t col;
+    uint8_t row;
+};
 
-    lcd_position pos_date_day;
-    lcd_position pos_date_month;
-    lcd_position pos_date_year;
-    lcd_position pos_day_week;
-}str_date;
+lcd_position pos_date_day {1, 0};
+lcd_position pos_date_month {4, 0};
+lcd_position pos_date_year {9, 0};
+lcd_position pos_day_week {12, 0};
 
-struct str_time_t {
-    /* 8 characters for the time + space character + 3 characters for the hour mode + null character */
-    char str[13];
-
-    lcd_position pos_time_hr;
-    lcd_position pos_time_min;
-    lcd_position pos_time_sec;
-    lcd_position pos_hour_mode;
-}str_time;
+lcd_position pos_time_hr {4, 1};
+lcd_position pos_time_min {7, 1};
+lcd_position pos_time_sec {10, 1};
+lcd_position pos_hour_mode {13, 1};
 
 struct lcd_position *date_time_positions[] = {
-    &str_date.pos_date_day,
-    &str_date.pos_date_month,
-    &str_date.pos_date_year,
-    &str_date.pos_day_week,
-    &str_time.pos_time_hr,
-    &str_time.pos_time_min,
-    &str_time.pos_time_sec,
-    &str_time.pos_hour_mode
+    &pos_date_day,
+    &pos_date_month,
+    &pos_date_year,
+    &pos_day_week,
+    &pos_time_hr,
+    &pos_time_min,
+    &pos_time_sec,
+    &pos_hour_mode
 };
 
 void setup(void)
@@ -152,17 +148,8 @@ void setup(void)
     reset_timer(&timer, 1000UL);
 
     /* Initialize variables for current date and time */
-    str_date.str[11] = {0};
-    str_date.pos_date_day = {1, 0};
-    str_date.pos_date_month = {4, 0};
-    str_date.pos_date_year = {9, 0};
-    str_date.pos_day_week = {12, 0};
-
-    str_time.str[13] = {0};
-    str_time.pos_time_hr = {4, 1};
-    str_time.pos_time_min = {7, 1};
-    str_time.pos_time_sec = {10, 1};
-    str_time.pos_hour_mode = {13, 1};
+    str_date[11] = {0};
+    str_time[13] = {0};
 
     date_time.sec = rtc.getSecond();
     date_time.min = rtc.getMinute();
@@ -209,21 +196,21 @@ void display_date_time(void)
 
     if (date_time.h12_flag == true) {
         am_pm_idx = (date_time.pm_flag == true) ? 1 : 0;
-        sprintf(str_time.str, "%02u:%02u:%02u %s",
+        sprintf(str_time, "%02u:%02u:%02u %s",
                 date_time.hour, date_time.min, date_time.sec, str_am_pm[am_pm_idx]);
     } else {
-        sprintf(str_time.str, "%02u:%02u:%02u", date_time.hour, date_time.min, date_time.sec);
+        sprintf(str_time, "%02u:%02u:%02u", date_time.hour, date_time.min, date_time.sec);
     }
     
-    sprintf(str_date.str, "%02u/%02u/20%02u %s",
+    sprintf(str_date, "%02u/%02u/20%02u %s",
                 date_time.date, date_time.month, date_time.year,
                 str_days_week[date_time.day_week]);
 
-    lcd.setCursor(str_date.pos_date_day.col,str_date.pos_date_day.row);
-    lcd.print(str_date.str);
+    lcd.setCursor(pos_date_day.col, pos_date_day.row);
+    lcd.print(str_date);
 
-    lcd.setCursor(str_time.pos_time_hr.col, str_time.pos_time_hr.row);
-    lcd.print(str_time.str);
+    lcd.setCursor(pos_time_hr.col, pos_time_hr.row);
+    lcd.print(str_time);
 }
 
 void edit_date_time(void)
@@ -252,7 +239,7 @@ void edit_date_time(void)
     reset_timer(&timer, BLINKING_PARAM_MS);
 
     /* In "Edit mode" display the 12/24 hour mode */
-    lcd.setCursor(str_time.pos_hour_mode.col, str_time.pos_hour_mode.row);
+    lcd.setCursor(pos_hour_mode.col, pos_hour_mode.row);
     lcd.print(str_hour_modes[rtc_current[HOUR_MODE_IDX]]);
 
     /* Loop through each parameter in the date and time
@@ -301,7 +288,7 @@ void edit_date_time(void)
     }
 
     /* Stop showing the 12/24 hour mode */
-    lcd.setCursor(str_time.pos_hour_mode.col, str_time.pos_hour_mode.row);
+    lcd.setCursor(pos_hour_mode.col, pos_hour_mode.row);
     lcd.print("   ");
 
     update_date_time(date_time_flags, rtc_current);
