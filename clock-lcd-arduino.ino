@@ -92,7 +92,7 @@ struct lcd_position {
 
 struct str_date_t {
     /* 10 characters for the date + space + 3 characters for the day of the week + null character */
-    char str_date[20];
+    char str_date[15];
 
     uint8_t date;
     uint8_t month;
