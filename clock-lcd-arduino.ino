@@ -99,7 +99,7 @@ struct str_date_t {
     uint8_t year;
     uint8_t day_week;
 
-    lcd_position pos_date_date;
+    lcd_position pos_date_day;
     lcd_position pos_date_month;
     lcd_position pos_date_year;
     lcd_position pos_day_week;
@@ -124,7 +124,7 @@ struct str_time_t {
 }str_time;
 
 struct lcd_position *date_time_positions[] = {
-    &str_date.pos_date_date,
+    &str_date.pos_date_day,
     &str_date.pos_date_month,
     &str_date.pos_date_year,
     &str_date.pos_day_week,
@@ -150,7 +150,7 @@ void setup(void)
     str_date.date = 0;
     str_date.month = 0;
     str_date.year = 0;
-    str_date.pos_date_date = {1, 0};
+    str_date.pos_date_day = {1, 0};
     str_date.pos_date_month = {4, 0};
     str_date.pos_date_year = {9, 0};
     str_date.pos_day_week = {12, 0};
@@ -222,7 +222,7 @@ void display_date_time(void)
                 str_date.date, str_date.month, str_date.year,
                 str_days_week[str_date.day_week]);
 
-    lcd.setCursor(str_date.pos_date_date.col,str_date.pos_date_date.row);
+    lcd.setCursor(str_date.pos_date_day.col,str_date.pos_date_day.row);
     lcd.print(str_date.str_date);
 
     lcd.setCursor(str_time.pos_time_hr.col, str_time.pos_time_hr.row);
