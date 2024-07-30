@@ -28,7 +28,7 @@
 #define DATE_IDX 0
 #define MONTH_IDX 1
 #define YEAR_IDX 2
-#define WEEK_IDX 3
+#define DAY_WEEK_IDX 3
 #define HOUR_IDX 4
 #define MIN_IDX 5
 #define SEC_IDX 6
@@ -76,25 +76,12 @@ ButtonList btnList(btns_menu);
 
 bool century = false;
 
-char *str_days_week[] = {
-    "MON",
-    "TUE",
-    "WEN",
-    "THU",
-    "FRI",
-    "SAT",
-    "SUN"
-};
+/* According to the datasheet the values for the days of the week goes from 1 - 7 */
+const char *str_days_week[] = {NULL, "MON", "TUE", "WEN", "THU", "FRI", "SAT", "SUN"};
 
-const char *str_hour_modes[] = {
-    "24h",
-    "12h"
-};
+const char *str_hour_modes[] = {"24h", "12h"};
 
-const char *str_am_pm[] = {
-    "AM",
-    "PM"
-};
+const char *str_am_pm[] = {"AM", "PM"};
 
 struct timer_t timer;
 
@@ -291,7 +278,7 @@ void edit_date_time(void)
         tmp_lcd_row = date_time_positions[param_idx]->row;
 
         /* Get the string of the parameter which is going to blink */
-        if (param_idx == WEEK_IDX) {
+        if (param_idx == DAY_WEEK_IDX) {
             str_week_idx = rtc_current[param_idx];
             sprintf(str_param, "%s", str_days_week[str_week_idx]);
         } else if (param_idx == HOUR_MODE_IDX) {
@@ -357,7 +344,7 @@ void update_date_time(uint8_t date_time_flags, uint8_t *current_date_time)
             break;
         
         case UPDATE_WEEK:
-            str_date.day_week = current_date_time[WEEK_IDX];
+            str_date.day_week = current_date_time[DAY_WEEK_IDX];
             rtc.setDoW(str_date.day_week);
             break;
         
@@ -402,7 +389,7 @@ void blink_parameter(uint8_t param_idx, uint8_t lcd_col, uint8_t lcd_row, char *
     /* Alternate between 0 and 1. 1 = show text, 0 = blank space */
     param_txt_flag ^= 1;
 
-    (param_idx != WEEK_IDX) ? sprintf(str_blank_space, "%s", "  ") : sprintf(str_blank_space, "%s", "   ");
+    (param_idx != DAY_WEEK_IDX) ? sprintf(str_blank_space, "%s", "  ") : sprintf(str_blank_space, "%s", "   ");
     
     lcd.setCursor(lcd_col, lcd_row);
     (param_txt_flag == BLINK_CLEAR_PARAM) ? lcd.print(str_blank_space) : lcd.print(str_param);
@@ -430,8 +417,8 @@ void increment_param(uint8_t param_idx, uint8_t *param, uint8_t *date_time_flags
         *date_time_flags |= UPDATE_YEAR;
         break;
     
-    case WEEK_IDX:
-        (*param == 6) ? (*param = 0) : (*param += 1);
+    case DAY_WEEK_IDX:
+        (*param == 7) ? (*param = 1) : (*param += 1);
         *date_time_flags |= UPDATE_WEEK;
         break;
     
