@@ -1,9 +1,15 @@
 # Clock LCD Arduino
 
-The purpose of this project is to implement the same menus and settings seen in some chinese DIY clock kits but using
-the Arduino Nano. Here is a picture of the project:
+The purpose of this project is to implement a fully functional clock with Arduino. Also this project may help as a base for
+similar projects.
 
-<img src="./imgs/clock-arduino-v0.2.png" alt="alt_text" width="450" height="auto">
+Here is the connections' diagram:
+
+<img src="./imgs/clock-lcd-arduino-connection-diagram.png" alt="alt_text" width="450" height="auto">
+
+And a picture of the prototype:
+
+<img src="./imgs/clock-lcd-arduino.jpg" alt="alt_text" width="510" height="auto">
 
 ## Instructions to use the clock
 
